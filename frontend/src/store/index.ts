@@ -25,10 +25,6 @@ const store = createStore<State>({
             )
         },
 
-        getOrderById: state => (id: number) => {
-            return state.orders.find(order => order.id === id)
-        },
-
         getProductsByType: state => (type: string) => {
             const allProducts = state.orders.flatMap(order =>
                 order.products.map(product => ({
@@ -66,16 +62,11 @@ const store = createStore<State>({
             state.orders = orders
         },
 
-        ADD_ORDER(state, order: Order) {
-            state.orders.push(order)
-        },
-
         DELETE_ORDER(state, orderId: number) {
             const orderIndex = state.orders.findIndex(order => order.id === orderId)
             if (orderIndex !== -1) {
                 state.orders.splice(orderIndex, 1)
 
-                // Если удаленный заказ был выбран, сбрасываем выбор
                 if (state.selectedOrder?.id === orderId) {
                     state.selectedOrder = null
                 }
@@ -145,39 +136,6 @@ const store = createStore<State>({
                 commit('SET_LOADING', false)
             }
         },
-
-        async createOrder({commit, dispatch}, orderData: Partial<Order>) {
-            commit('SET_LOADING', true)
-            commit('SET_ERROR', null)
-
-            try {
-                const response = await fetch(`${API_URL}/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(orderData),
-                })
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
-                }
-
-                const newOrder = await response.json()
-
-                await dispatch('fetchOrders')
-
-                console.log('✅ Заказ создан:', newOrder.id)
-                return newOrder
-            } catch (error) {
-                console.error('❌ Ошибка создания заказа:', error)
-                commit('SET_ERROR', 'Не удалось создать заказ')
-                return null
-            } finally {
-                commit('SET_LOADING', false)
-            }
-        },
-
 
         selectOrder({commit}, order: Order | null) {
             commit('SELECT_ORDER', order)

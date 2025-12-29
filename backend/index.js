@@ -6,11 +6,9 @@ import cors from 'cors'
 const app = express()
 const httpServer = createServer(app)
 
-// Настройка CORS
 app.use(cors())
 app.use(express.json())
 
-// Создание Socket.IO сервера
 const io = new Server(httpServer, {
     cors: {
         origin: '*',
@@ -257,28 +255,21 @@ app.get('/api/health', (req, res) => {
     })
 })
 
-// ========================================
-// WebSocket для счетчика активных сессий
-// ========================================
-
 let activeConnections = 0
 
 io.on('connection', socket => {
     activeConnections++
     console.log(`✅ Новое подключение. Активных сессий: ${activeConnections}`)
 
-    // Отправляем текущее количество сессий всем клиентам
     io.emit('activeSessions', activeConnections)
 
     socket.on('disconnect', () => {
         activeConnections--
         console.log(`❌ Отключение. Активных сессий: ${activeConnections}`)
 
-        // Отправляем обновленное количество сессий
         io.emit('activeSessions', activeConnections)
     })
 
-    // Обработка пинга для поддержания соединения
     socket.on('ping', () => {
         socket.emit('pong')
     })
@@ -311,7 +302,6 @@ httpServer.listen(PORT, () => {
     console.log('')
 })
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('SIGTERM получен. Закрытие сервера...')
     httpServer.close(() => {

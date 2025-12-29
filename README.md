@@ -36,13 +36,6 @@ Infrastructure:
 - Docker Compose
 - Git
 
-## Project Structure
-
-```text
-frontend/   – Vue 3 SPA
-backend/    – REST API + WebSocket
-```
-
 ## Run with Docker
 ```
 docker-compose up --build

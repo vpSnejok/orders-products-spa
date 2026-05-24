@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import {io, type Socket} from 'socket.io-client'
 import {computed, onBeforeUnmount, onMounted} from 'vue'
-import {useStore} from 'vuex'
 import TopMenu from "@/components/topMenu/TopMenu.vue";
 import NavigationMenu from "@/components/navigationMenu/NavigationMenu.vue";
+import { useOrdersStore } from '@/store'
 
 
-const store = useStore()
+const store = useOrdersStore()
 let socket: Socket | null = null
 let pingInterval: number | undefined
 
-const loading = computed(() => store.getters.isLoading)
-const error = computed(() => store.getters.getError)
+const loading = computed(() => store.isLoading)
+const error = computed(() => store.getError)
 
 const retryLoad = () => {
-  store.dispatch('fetchOrders')
+  store.fetchOrders()
 }
 
 onMounted(() => {
-  store.dispatch('fetchOrders')
+  store.fetchOrders()
 
-  const socketUrl = 'http://localhost:3000'
+  const socketUrl = 'http://orders.snejok.syudo.org.ua:13005'
 
   console.log('🔌 Подключение к WebSocket:', socketUrl)
 
@@ -37,7 +37,7 @@ onMounted(() => {
 
   socket.on('activeSessions', (count: number) => {
     console.log('📊 Активных сессий:', count)
-    store.dispatch('updateActiveSessions', count)
+    store.updateActiveSessions(count)
   })
 
   socket.on('disconnect', () => {

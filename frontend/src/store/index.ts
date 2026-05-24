@@ -1,150 +1,155 @@
-import {createStore} from 'vuex'
-import type {Order, State} from '@/types'
+import { defineStore } from 'pinia'
+import type { Order, Product, State } from '@/types'
 
-const API_URL = 'http://localhost:3000/api'
+const API_URL = 'http://orders.snejok.syudo.org.ua:13005/api'
 
-const store = createStore<State>({
-    state: {
-        orders: [],
-        products: [],
-        selectedOrder: null,
-        activeSessions: 0,
-        loading: false,
-        error: null,
-    },
+type ProductWithOrderTitle = Product & { orderTitle: string }
 
-    getters: {
-        getAllOrders: state => state.orders,
+const normalizeOrders = (orders: Order[]): Order[] =>
+	orders.map(order => ({
+		...order,
+		products: order.products.map(product => ({
+			...product,
+			isNew: Boolean(product.isNew),
+		})),
+	}))
 
-        getAllProducts: state => {
-            return state.orders.flatMap(order =>
-                order.products.map(product => ({
-                    ...product,
-                    orderTitle: order.title,
-                }))
-            )
-        },
+export const useOrdersStore = defineStore('orders', {
+	state: (): State => ({
+		orders: [],
+		products: [],
+		selectedOrder: null,
+		activeSessions: 0,
+		loading: false,
+		error: null,
+	}),
 
-        getProductsByType: state => (type: string) => {
-            const allProducts = state.orders.flatMap(order =>
-                order.products.map(product => ({
-                    ...product,
-                    orderTitle: order.title,
-                }))
-            )
+	getters: {
+		getAllOrders: state => state.orders,
 
-            if (type === 'all') {
-                return allProducts
-            }
+		getAllProducts: state =>
+			state.orders.flatMap(order =>
+				order.products.map(product => ({
+					...product,
+					orderTitle: order.title,
+				}))
+			) as ProductWithOrderTitle[],
 
-            return allProducts.filter(product => product.type === type)
-        },
+		getProductsByType: state => (type: string) => {
+			const allProducts = state.orders.flatMap(order =>
+				order.products.map(product => ({
+					...product,
+					orderTitle: order.title,
+				}))
+			) as ProductWithOrderTitle[]
 
-        getSelectedOrder: state => state.selectedOrder,
+			if (type === 'all') {
+				return allProducts
+			}
 
-        getActiveSessions: state => state.activeSessions,
+			return allProducts.filter(product => product.type === type)
+		},
 
-        isLoading: state => state.loading,
+		getSelectedOrder: state => state.selectedOrder,
 
-        getError: state => state.error,
-    },
+		getActiveSessions: state => state.activeSessions,
 
-    mutations: {
-        SET_LOADING(state, loading: boolean) {
-            state.loading = loading
-        },
+		isLoading: state => state.loading,
 
-        SET_ERROR(state, error: string | null) {
-            state.error = error
-        },
+		getError: state => state.error,
+	},
 
-        SET_ORDERS(state, orders: Order[]) {
-            state.orders = orders
-        },
+	actions: {
+		async fetchOrders() {
+			this.loading = true
+			this.error = null
 
-        DELETE_ORDER(state, orderId: number) {
-            const orderIndex = state.orders.findIndex(order => order.id === orderId)
-            if (orderIndex !== -1) {
-                state.orders.splice(orderIndex, 1)
+			try {
+				const response = await fetch(`${API_URL}/orders`)
 
-                if (state.selectedOrder?.id === orderId) {
-                    state.selectedOrder = null
-                }
-            }
-        },
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`)
+				}
 
-        SELECT_ORDER(state, order: Order | null) {
-            state.selectedOrder = order
-        },
+				const orders = (await response.json()) as Order[]
+				const normalizedOrders = normalizeOrders(orders)
 
-        SET_ACTIVE_SESSIONS(state, count: number) {
-            state.activeSessions = count
-        },
-    },
+				this.orders = normalizedOrders
+				console.log('✅ Заказы загружены с сервера:', normalizedOrders.length)
+			} catch (error) {
+				console.error('❌ Ошибка загрузки заказов:', error)
+				this.error = 'Не удалось загрузить заказы'
+			} finally {
+				this.loading = false
+			}
+		},
 
-    actions: {
-        async fetchOrders({commit}) {
-            commit('SET_LOADING', true)
-            commit('SET_ERROR', null)
+		async deleteOrder(orderId: number) {
+			this.loading = true
+			this.error = null
 
-            try {
-                const response = await fetch(`${API_URL}/orders`)
+			try {
+				const response = await fetch(`${API_URL}/orders/${orderId}`, {
+					method: 'DELETE',
+				})
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
-                }
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`)
+				}
 
-                const orders = await response.json()
+				const orderIndex = this.orders.findIndex(order => order.id === orderId)
+				if (orderIndex !== -1) {
+					this.orders.splice(orderIndex, 1)
 
-                const normalizedOrders = orders.map((order: Order) => ({
-                    ...order,
-                    products: order.products.map((product: any) => ({
-                        ...product,
-                        isNew: Boolean(product.isNew),
-                    })),
-                }))
+					if (this.selectedOrder?.id === orderId) {
+						this.selectedOrder = null
+					}
+				}
 
-                commit('SET_ORDERS', normalizedOrders)
-                console.log('✅ Заказы загружены с сервера:', normalizedOrders.length)
-            } catch (error) {
-                console.error('❌ Ошибка загрузки заказов:', error)
-                commit('SET_ERROR', 'Не удалось загрузить заказы')
-            } finally {
-                commit('SET_LOADING', false)
-            }
-        },
+				console.log('✅ Заказ удален:', orderId)
+			} catch (error) {
+				console.error('❌ Ошибка удаления заказа:', error)
+				this.error = 'Не удалось удалить заказ'
+			} finally {
+				this.loading = false
+			}
+		},
 
-        async deleteOrder({commit, dispatch}, orderId: number) {
-            commit('SET_LOADING', true)
-            commit('SET_ERROR', null)
+		async resetData() {
+			this.loading = true
+			this.error = null
 
-            try {
-                const response = await fetch(`${API_URL}/orders/${orderId}`, {
-                    method: 'DELETE',
-                })
+			try {
+				const response = await fetch(`${API_URL}/reset`, {
+					method: 'POST',
+				})
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
-                }
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`)
+				}
 
-                commit('DELETE_ORDER', orderId)
-                console.log('✅ Заказ удален:', orderId)
-            } catch (error) {
-                console.error('❌ Ошибка удаления заказа:', error)
-                commit('SET_ERROR', 'Не удалось удалить заказ')
-            } finally {
-                commit('SET_LOADING', false)
-            }
-        },
+				const data = (await response.json()) as { orders: Order[] }
+				const normalizedOrders = normalizeOrders(data.orders)
 
-        selectOrder({commit}, order: Order | null) {
-            commit('SELECT_ORDER', order)
-        },
+				this.orders = normalizedOrders
+				this.selectedOrder = null
+				console.log('✅ Данные восстановлены:', normalizedOrders.length)
+			} catch (error) {
+				console.error('❌ Ошибка восстановления данных:', error)
+				this.error = 'Не удалось восстановить данные'
+			} finally {
+				this.loading = false
+			}
+		},
 
-        updateActiveSessions({commit}, count: number) {
-            commit('SET_ACTIVE_SESSIONS', count)
-        },
-    },
+		selectOrder(order: Order | null) {
+			this.selectedOrder = order
+		},
+
+		updateActiveSessions(count: number) {
+			this.activeSessions = count
+		},
+	},
 })
 
-export default store
+export default useOrdersStore

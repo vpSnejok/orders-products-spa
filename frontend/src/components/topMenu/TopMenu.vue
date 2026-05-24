@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useStore } from 'vuex'
+import { useOrdersStore } from '@/store'
 
-const store = useStore()
+const store = useOrdersStore()
 const currentTime = ref(new Date())
 let timer: number | undefined
 
-const activeSessions = computed(() => store.getters.getActiveSessions || 1)
+const activeSessions = computed(() => store.getActiveSessions ?? 0)
 
 const formattedDateTime = computed(() => {
   const date = currentTime.value

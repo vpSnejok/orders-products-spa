@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
-import {useStore} from 'vuex'
 
 import type {Product} from '@/types'
 import ProductsHeader from "@/components/product/ProductsHeader.vue";
 import ProductsGrid from "@/components/product/ProductsGrid.vue";
 import ProductsEmpty from "@/components/product/ProductsEmpty.vue";
+import { useOrdersStore } from '@/store'
 
-const store = useStore()
+const store = useOrdersStore()
 const selectedType = ref('all')
 
-const allProducts = computed(() => store.getters.getAllProducts)
+const allProducts = computed(() => store.getAllProducts)
 
 const productTypes = computed(() => {
   const types = new Set<string>(
@@ -20,7 +20,7 @@ const productTypes = computed(() => {
 })
 
 const filteredProducts = computed(() => {
-  return store.getters.getProductsByType(selectedType.value)
+  return store.getProductsByType(selectedType.value)
 })
 </script>
 

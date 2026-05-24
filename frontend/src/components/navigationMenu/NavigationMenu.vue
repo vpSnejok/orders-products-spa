@@ -23,10 +23,35 @@
 						<span>Продукты</span>
 					</router-link>
 				</li>
+
+				<!-- Кнопка reset data -->
+				<li class="navigation-menu__item">
+					<button
+						class="navigation-menu__link navigation-menu__button"
+						:disabled="loading"
+						@click="resetData"
+					>
+						<i class="bi bi-arrow-clockwise"></i>
+						<span>Reset Data</span>
+					</button>
+				</li>
 			</ul>
 		</div>
 	</nav>
 </template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useOrdersStore } from '@/store'
+
+const store = useOrdersStore()
+
+const loading = computed(() => store.isLoading)
+
+const resetData = async () => {
+	await store.resetData()
+}
+</script>
 
 <style scoped>
 .navigation-menu {
@@ -56,6 +81,10 @@
 	font-weight: 500;
 	transition: all 0.2s ease;
 	position: relative;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	font: inherit;
 }
 
 .navigation-menu__link:hover {
@@ -69,6 +98,15 @@
 
 .navigation-menu__link i {
 	font-size: 18px;
+}
+
+.navigation-menu__button {
+	height: 100%;
+}
+
+.navigation-menu__button:disabled {
+	opacity: 0.65;
+	cursor: wait;
 }
 
 @media (max-width: 768px) {

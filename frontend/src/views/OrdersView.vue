@@ -5,20 +5,20 @@ import OrderDetail from "@/components/order/OrderDetail.vue";
 import DeleteModal from "@/components/order/DeleteModal.vue";
 import type {Order} from '@/types'
 
-import {useStore} from 'vuex'
+import { useOrdersStore } from '@/store'
 
-const store = useStore()
+const store = useOrdersStore()
 const orderToDelete = ref<number | null>(null)
 
-const orders = computed(() => store.getters.getAllOrders)
-const selectedOrder = computed(() => store.getters.getSelectedOrder)
+const orders = computed(() => store.getAllOrders)
+const selectedOrder = computed(() => store.getSelectedOrder)
 
 const selectOrder = (order: Order) => {
-  store.dispatch('selectOrder', order)
+  store.selectOrder(order)
 }
 
 const deselectOrder = () => {
-  store.dispatch('selectOrder', null)
+  store.selectOrder(null)
 }
 
 const showDeleteModal = (orderId: number) => {
@@ -31,7 +31,7 @@ const cancelDelete = () => {
 
 const confirmDelete = () => {
   if (orderToDelete.value !== null) {
-    store.dispatch('deleteOrder', orderToDelete.value)
+    store.deleteOrder(orderToDelete.value)
     orderToDelete.value = null
   }
 }

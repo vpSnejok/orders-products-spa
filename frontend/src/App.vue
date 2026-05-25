@@ -20,7 +20,8 @@ const retryLoad = () => {
 onMounted(() => {
   store.fetchOrders()
 
-  const socketUrl = 'http://orders.snejok.syudo.org.ua:13005'
+  const socketUrl =
+    import.meta.env.VITE_SOCKET_URL || 'http://orders.snejok.syudo.org.ua:13005'
 
   console.log('🔌 Подключение к WebSocket:', socketUrl)
 

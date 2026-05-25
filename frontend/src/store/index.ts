@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import type { Order, Product, State } from '@/types'
 
-const API_URL = 'http://orders.snejok.syudo.org.ua:13005/api'
+const API_URL =
+	import.meta.env.VITE_API_URL || 'http://orders.snejok.syudo.org.ua:13005/api'
 
 type ProductWithOrderTitle = Product & { orderTitle: string }
 
